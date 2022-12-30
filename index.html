@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculator</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://kit.fontawesome.com/4cd72785b5.js" crossorigin="anonymous"></script>
   </head>
   <body>
     
@@ -26,32 +27,30 @@
             <h2 class="current-output">8</h2>
           </div>
         </section>
-
         <!-- Body of the calculator -->
         <section class="calculator-body">
 
           <!-- Button grid for the calculator -->
           <div class="btn-grid">
-            <button class="calculator-btn function-btn" id="clear-btn">Clear</button>
-            <button class="calculator-btn function-btn" id="delete-btn">Delete</button>
-            <button class="calculator-btn function-btn" id="modulus-btn">Mod</button>
-            <button class="calculator-btn arithmetic-btn" id="division-btn">Divide</button>
+            <button class="calculator-btn" id="clear-btn">Clear</button>
+            <button class="calculator-btn" id="delete-btn">Del</button>
+            <button class="calculator-btn arithmetic-btn" id="modulus-btn">Mod</button>
+            <button class="calculator-btn arithmetic-btn" id="division-btn"><span class="btn-icon"><i class="fa-solid fa-divide"></i></span></button>
             <button class="calculator-btn digit-btn" data-value="7">7</button>
             <button class="calculator-btn digit-btn" data-value="8">8</button>
             <button class="calculator-btn digit-btn" data-value="9">9</button>
-            <button class="calculator-btn arithmetic-btn" id="multiplication-btn">Multiply</button>
+            <button class="calculator-btn arithmetic-btn" id="multiplication-btn"><span class="btn-icon"><i class="fa-solid fa-xmark"></i></span></button>
             <button class="calculator-btn digit-btn" data-value="4">4</button>
             <button class="calculator-btn digit-btn" data-value="5">5</button>
             <button class="calculator-btn digit-btn" data-value="6">6</button>
-            <button class="calculator-btn arithmetic-btn" id="subtraction-btn">Subtract</button>
+            <button class="calculator-btn arithmetic-btn" id="subtraction-btn"><span class="btn-icon"><i class="fa-solid fa-minus"></i></span></button>
             <button class="calculator-btn digit-btn" data-value="1">1</button>
             <button class="calculator-btn digit-btn" data-value="2">2</button>
             <button class="calculator-btn digit-btn" data-value="3">3</button>
-            <button class="calculator-btn arithmetic-btn" id="addition-btn">Add</button>
+            <button class="calculator-btn arithmetic-btn" id="addition-btn"><span class="btn-icon"><i class="fa-solid fa-plus"></i></span></button>
             <button class="calculator-btn digit-btn" data-value="0">0</button>
-            <button class="calculator-btn arithmetic-btn" id="decimal-btn">.</button>
-            <button class="calculator-btn arithmetic-btn" id="equal-btn">Equal</button>
-
+            <button class="calculator-btn" id="decimal-btn">.</button>
+            <button class="calculator-btn" id="equal-btn"><span class="btn-icon"><i class="fa-solid fa-equals"></i></span></button>
           </div>
           
         

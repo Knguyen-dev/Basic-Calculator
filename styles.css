@@ -91,11 +91,23 @@ header {
 .calculator-display {
   background: var(--clr-grey-3);
   text-align: right;
-  padding: 0.8em;
+  padding: 2em 0;
   box-shadow: 5px 5px 0 rgba(0,0,0, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+.previous-output,
+.current-output {
+  /* Makes it so it flows to the left of the calculator */
+  position: absolute;
+  right: 14px;
+}
+.previous-output {
+  top: 10%;
 }
 
-/*Calculator body styling*/
+
+/*Calculator body styling for the button grid and buttons*/
 
 .btn-grid {
   align-self: center;
@@ -104,7 +116,6 @@ header {
   gap: 0.50em; 
 
 }
-
 .calculator-btn {
   border-radius: 50%;
   width: 5em;
@@ -120,13 +131,14 @@ header {
   box-shadow: 5px 5px 0 rgba(0,0,0, 0.8);
 }
 .calculator-btn:focus {
-  background-color: var(--clr-grey-2);
-
-
+  background-color: var(--clr-white);
+  color: var(--clr-black);
 }
+
 
 #equal-btn {
   border-radius: 2.5em;
   grid-column: 3 / 5;
-  width: 100%;
+  width: 100%; 
+  /* Needs width or height 100% to fit the entire thing  */
 }

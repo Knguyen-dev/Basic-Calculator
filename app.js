@@ -17,9 +17,33 @@ already in the display
 - Store the first number when the user presses an operator and save the operation that was chosen, then call the operate function when the equal button is pressed.
 Several operations should be able to be done in a row: 12 + 7 - 5 * 3 = 42; okay looks worrying but please wait for the explanation.
 NOTE: Only a pair of numbers should be on screen at a time. Let's say you press 12 then plus then 7 then minus. First it should 12 + 7 to get 19, and then 19 - something
-
 1. 12 + 7 = 19
 2. 19 - 5 = 14
 3. 14 * 3 = 42
-
 */
+
+const previousOutputEl = document.querySelector('.previous-output');
+const currentOutputEl = document.querySelector('.current-output');
+
+const clearBtn = document.getElementById('clear-btn');
+const deleteBtn = document.getElementById('delete-btn');
+const decimalBtn = document.getElementById('decimal-btn');
+const calculateBtn = document.getElementById('equal-btn');
+const digitBtns = document.querySelectorAll('.digit-btn');
+const arithmeticBtns = document.querySelectorAll('.arithmetic-btn');
+
+let firstNum = "";
+let secondNum = "";
+let currentOperator;
+
+// Count the number in the javascript and then visually count the number on
+// the webpage
+
+digitBtns.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const BTN_VALUE = e.currentTarget.dataset.value;
+    firstNum += BTN_VALUE;
+
+    currentOutputEl.textContent = firstNum;
+  })
+})
