@@ -25,7 +25,6 @@ const currentOutputEl = document.querySelector('.current-output');
 
 const clearBtn = document.getElementById('clear-btn');
 const deleteBtn = document.getElementById('delete-btn');
-const decimalBtn = document.getElementById('decimal-btn');
 let decimal_btn_enabled = true;
 
 const calculateBtn = document.getElementById('equal-btn');
@@ -72,7 +71,7 @@ function calculate(num1, num2, operation) {
 
   // if it isn't an integer and it isn't a string then we can round it
   if ((!Number.isInteger(result)) && (typeof(result) !== "string")) {
-    result = result.toFixed(2);
+    result = result.toFixed(3);
   }
 
   return result.toString();
@@ -102,8 +101,8 @@ equalBtn.addEventListener('click', function() {
     
     renderOutput(equation);
   } else {
-    console.log('Conditions for a correct equation was not met so we should throw an error');
-
+    equation = "Equation Error";
+    renderOutput(equation);
   }
 })
 
@@ -158,8 +157,6 @@ arithmeticBtns.forEach(btn => {
           operator = "";
           equation = "Division Error Again";
         }
-
-
         // need to have an error handling clause when it is a zero division
         // If you get a zero division then we should clear both numbers and all variables
 
@@ -196,16 +193,9 @@ function renderOutput(output) {
   output = output.toString(); //Ensure that the output or data being rendered is actually a string so we can do tests with it
   currentOutputEl.textContent = output;
   // Checks if decimal is in there
-  if (output.includes('.')) {
-    decimalBtn.disabled = true;
-  } else {
-    decimalBtn.disabled = false;
-  }
+  
 }
-decimalBtn.addEventListener('click', function() {
-  equation += '.';
-  renderOutput(equation);
-})
+
 
 function clearData() {
   num1 = "";
@@ -217,25 +207,64 @@ function clearData() {
 
 // Clears the equation on screen alongside num1 and num2 let user start out fresh.
 clearBtn.addEventListener('click', clearData);
-deleteBtn.addEventListener('click', () => {
-  equation = equation.slice(0, equation.length - 1);
+deleteBtn.addEventListener('click', () => { //get the deleted character, if the character matches a piece of a number then change the number
+  const DELETED_CHAR = equation.slice(equation.length - 1); //get the deleted character since it may provide good information
+  equation = equation.slice(0, equation.length - 1); //reduce the equation, this is guaranteed
+
+  
+  //if its the operator delete the current operator
+  if (DELETED_CHAR == operator) {
+    operator = "";
+  } else if (operator) { //else if the operator still exists then we are deleting something from the second number
+    num2 = num2.slice(0, num2.length - 1);
+    decimalCheck(num2); //could have deleted a decimal so do a decimal check
+  } else if (!operator) {
+    num1 = num1.slice(0, num1.length - 1);
+    decimalCheck(num1);
+  }
+
+
   renderOutput(equation);
 })
 
+function decimalCheck(num) {
+  console.log(`num: ${num} in decimal check`);
+  if (num.includes('.')) {
+    console.log('Disabling the decimal button since decimal detected');
+    digitBtns.forEach(btn => {
+      if (btn.dataset.value == '.') {
+        btn.disabled = true;
+      }
+    })
+  } else {
+    console.log("Enabling the decimal btn since decimal not detected");
+    digitBtns.forEach(btn => {
+      if (btn.dataset.value == '.') {
+        btn.disabled = false;
+      }
+    })
+  } 
 
+}
+
+
+// Have the decimal checker in the delete button
 digitBtns.forEach(btn => {
   btn.addEventListener('click', (e) => {
     const BTN_VALUE = e.currentTarget.dataset.value;
-    
     // if operator is set then we go to the second number else the first number
     // Or if the user used the equal btn to calculate an answer
     if (operator) { //|| used_btn == true;
       num2 += BTN_VALUE;
+      decimalCheck(num2);
     } else {
-      num1 += BTN_VALUE;
+      num1 += BTN_VALUE; //user enters the period and after we check and disable. 
+      decimalCheck(num1);
     }
     
+    console.log(`${num1}`);
     equation += BTN_VALUE;
     renderOutput(equation);
   })
 })
+
