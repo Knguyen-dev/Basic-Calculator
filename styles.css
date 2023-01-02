@@ -96,13 +96,13 @@ header {
   position: relative;
   overflow: hidden;
 }
-.previous-output,
-.current-output {
+#previous-output,
+#current-output {
   /* Makes it so it flows to the left of the calculator */
   position: absolute;
   right: 14px;
 }
-.previous-output {
+#previous-output {
   top: 10%;
 }
 
