@@ -134,11 +134,13 @@ header {
   background-color: var(--clr-white);
   color: var(--clr-black);
 }
-
-
 #equal-btn {
   border-radius: 2.5em;
   grid-column: 3 / 5;
   width: 100%; 
   /* Needs width or height 100% to fit the entire thing  */
+}
+.button-disabled {
+  background: lemonchiffon;
+  color: var(--clr-black);
 }

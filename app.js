@@ -27,7 +27,6 @@ const clearBtn = document.getElementById('clear-btn');
 const deleteBtn = document.getElementById('delete-btn');
 let decimal_btn_enabled = true;
 
-const calculateBtn = document.getElementById('equal-btn');
 const digitBtns = document.querySelectorAll('.digit-btn');
 const arithmeticBtns = document.querySelectorAll('.arithmetic-btn');
 const equalBtn = document.getElementById('equal-btn');
@@ -44,7 +43,7 @@ let equation = "";
 // If I add by 0 it displays weird change it
 // Both of these numbers should be strings
 function calculate(num1, num2, operation) {
-  console.log(`Calculation trigged num1: ${num1} and num2: ${num2}`);
+  console.log(`Calculation trigged num1: ${num1} and num2: ${num2}, operator: ${operator}`);
   num1 = parseFloat(num1);
   num2 = parseFloat(num2);
   let result;
@@ -54,9 +53,10 @@ function calculate(num1, num2, operation) {
     result = num1 - num2;
   } else if (operation == "multiply") {
     result = num1 * num2;
-  } else { //all left is division and modulo
+  } else { //all left is division and modulo; if we are dividing by zero then show an error and return nothing, else do the regular math
     if (num2 === 0) {
-      result = ""; //set result to blank so that num1 will be blank
+      displayError('DivisionError');
+      // return ""; reset the num1 string
     } else {
       switch(operation) {
         case "divide":
@@ -68,41 +68,41 @@ function calculate(num1, num2, operation) {
       }
     }
   }
-
   // if it isn't an integer and it isn't a string then we can round it
-  if ((!Number.isInteger(result)) && (typeof(result) !== "string")) {
+  if (!Number.isInteger(result)) {
     result = result.toFixed(3);
   }
-
   return result.toString();
 };
 
+function displayError(errorType) {
+  currentOutputEl.textContent = errorType;
+  // Disable all buttons except for the clear button, but also when clear button is pressed we re-enable all buttons again
+  digitBtns.forEach(btn => {
+    btn.classList.add('button-disabled');
+    btn.disabled = true;
+  })
+  arithmeticBtns.forEach(btn => {
+    btn.classList.add('button-disabled');
+    btn.disabled = true;
 
-// Equal button only needs works when both numbers exist and an operator is used
-// NOTE: For example 4 + 5 = 9, and we should do be able to enter a digit like 8 to make
-// num1 98; We don't really want this feature, so we have to differentiate between when the user
-// calculates using the equal btn or the artihmetic button
+  })
+  equalBtn.classList.add('button-disabled');
+  deleteBtn.classList.add('button-disabled');
+  equalBtn.disabled = true;
+  deleteBtn.disabled = true;
+}
+
+// When both numbers exist and an operator exists
 equalBtn.addEventListener('click', function() {
-  console.log('Equal button was pressed');
-  console.log(`${num1} and ${num2} operator: ${operator} `);
   if ((num1.length > 0 && num2.length > 0) && (operator)) {
-    // Get number; reset operator and num2 to prepare for the user using an arithmetic button or adding digits to the result;
-    num1 = calculate(num1, num2, operator); //not working because it neeeds to be a string
+    num1 = calculate(num1, num2, operator);
     num2 = "";
     operator = "";
-    used_equal_btn = true;
     equation = num1;
-    if (num1 == "") {
-      equation = "Division Error";
-    }
-
-    // Our resulting value will be reassigned to equation and then rendered out
-    // We didn't do this with a new value because digit buttons add onto the equation variable
-    
     renderOutput(equation);
   } else {
-    equation = "Equation Error";
-    renderOutput(equation);
+    displayError("Equation Error");
   }
 })
 
@@ -133,47 +133,33 @@ arithmeticBtns.forEach(btn => {
     // if there's no number then that's an error; a [missing number] [arithmetic operator] situation
     // Strict equality since 0 is also consider a false value; avoids 0 [operator] causing a division error
     if (num1 === false) {
-      console.log(num1);
-      console.log("Error clause triggered");
-      equation = "Error no number";
-      renderOutput(equation);
+      displayError("Missing Number Error");
     } else if (!operator) { 
       // number [operator]; situation where they just setting a new operator
       operator = btnID;
       equation += mathSymbols[operator];
     } else {
     // Else they are correctly calculating an equation
-      if (operator && (num2.length > 0 && parseInt(num2) !== 0)) { //num2 is a real string so its a real number
-
+      if (operator && (num2.length > 0 && parseFloat(num2) !== 0)) { //num2 is a real string so its a real number
         // If the operator is already set then you have a 2 + 2 [operator] situation so you have to 
         // Handle the calculation before reassigning that operator in case user ignores the equal button
-        // remember to empty num2 since it has just been calculated
+        // remember to empty num2 since it has just been calculated; parseFloat is needed to make sure it isn't a zero value, but its a real number with digits
         num1 = calculate(num1, num2, operator);
         num2 = "";      
         operator = btnID; //set the new [operator]
         equation = `${num1}${mathSymbols[operator]}`;
 
-        if (num1 == "") {
-          operator = "";
-          equation = "Division Error Again";
-        }
-        // need to have an error handling clause when it is a zero division
-        // If you get a zero division then we should clear both numbers and all variables
 
       } else if (operator && (num2 == false)) {
         // Equation: [number] [operator] [0 or a null value] and then user is adding a [new operator]
         // Strict equality operator and parseInt is needed to make sure it is actually the value 0
         // Else if we don't do this then num2 is empty then the first clause will be triggered always
         if (num2 === '0') { //If its a zero then we have a [number] [operator] 0 [new operator];
-          console.log("Num2 detected as 0");
           num1 = calculate(num1, num2, operator);
           num2 = "";
           operator = btnID; //set the new operator
           equation = `${num1}${mathSymbols[operator]}`;
-          if (num1 == "") { //this would mean there was a division error
-            operator = "";  //So we aer going to reset the operator in that case
-            equation = "Division Error"; //We are going to render out the division error 0
-          }
+          
 
         } else {
           //Else if not zero it's a regular null or empty value do the regular thing of changing the operator in the logic and visually
@@ -191,27 +177,42 @@ arithmeticBtns.forEach(btn => {
 
 function renderOutput(output) {
   output = output.toString(); //Ensure that the output or data being rendered is actually a string so we can do tests with it
-  currentOutputEl.textContent = output;
-  // Checks if decimal is in there
-  
+  currentOutputEl.textContent = output; 
+  console.log(`${num1} ${num2} ${operator} ${equation}`);
 }
 
-
+// Function clears the data. Clears both numbers, operator, and the equation
+// If there was an error that was triggered then the user would be lead to execute this function, which 
+// allows buttons to be clicked again after being disabled.
 function clearData() {
   num1 = "";
   num2 = "";
   operator = "";
   equation = "";
-  renderOutput(equation);
+  currentOutputEl.textContent = "";
+
+  digitBtns.forEach(btn => {
+    btn.classList.remove('button-disabled');
+    btn.disabled = false;
+  })
+  arithmeticBtns.forEach(btn => {
+    btn.classList.remove('button-disabled');
+    btn.disabled = false;
+
+  })
+  equalBtn.classList.remove('button-disabled');
+  deleteBtn.classList.remove('button-disabled');
+  equalBtn.disabled = false;
+  deleteBtn.disabled = false;
+  
 }
 
 // Clears the equation on screen alongside num1 and num2 let user start out fresh.
 clearBtn.addEventListener('click', clearData);
+
 deleteBtn.addEventListener('click', () => { //get the deleted character, if the character matches a piece of a number then change the number
   const DELETED_CHAR = equation.slice(equation.length - 1); //get the deleted character since it may provide good information
-  equation = equation.slice(0, equation.length - 1); //reduce the equation, this is guaranteed
-
-  
+  equation = equation.slice(0, equation.length - 1); //reduce the equation, this is guaranteed  
   //if its the operator delete the current operator
   if (DELETED_CHAR == operator) {
     operator = "";
@@ -223,30 +224,25 @@ deleteBtn.addEventListener('click', () => { //get the deleted character, if the 
     decimalCheck(num1);
   }
 
-
+  console.log(`Delete action => num1: ${num1} num2: ${num2} operator: ${operator}`);
   renderOutput(equation);
 })
 
 function decimalCheck(num) {
-  console.log(`num: ${num} in decimal check`);
   if (num.includes('.')) {
-    console.log('Disabling the decimal button since decimal detected');
     digitBtns.forEach(btn => {
       if (btn.dataset.value == '.') {
         btn.disabled = true;
       }
     })
   } else {
-    console.log("Enabling the decimal btn since decimal not detected");
     digitBtns.forEach(btn => {
       if (btn.dataset.value == '.') {
         btn.disabled = false;
       }
     })
   } 
-
 }
-
 
 // Have the decimal checker in the delete button
 digitBtns.forEach(btn => {
@@ -260,10 +256,9 @@ digitBtns.forEach(btn => {
     } else {
       num1 += BTN_VALUE; //user enters the period and after we check and disable. 
       decimalCheck(num1);
-    }
-    
-    console.log(`${num1}`);
+    } 
     equation += BTN_VALUE;
+    console.log(`num1: ${num1} num2:${num2} operator: ${operator}`);
     renderOutput(equation);
   })
 })
