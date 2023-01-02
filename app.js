@@ -16,10 +16,8 @@ already in the display
 - Store the first number when the user presses an operator and save the operation that was chosen, then call the operate function when the equal button is pressed.
 Several operations should be able to be done in a row: 12 + 7 - 5 * 3 = 42; okay looks worrying but please wait for the explanation.
 NOTE: Only a pair of numbers should be on screen at a time. Let's say you press 12 then plus then 7 then minus. First it should 12 + 7 to get 19, and then 19 - something
-
 maybe create an object called equationinput that will record a specific input 
 */
-
 
 // Output section
 const previousOutputEl = document.getElementById('previous-output');
@@ -38,10 +36,11 @@ let decimal_btn_enabled = true;
 // Boolean that records if an error happens
 let error_detected = false;
 
+// Boolean for the recording when the equals btn was used
+let used_equals_btn = false;
 
 // Still need to create a class called equationEntry
 let equationHistory = [];
-
 
 // The first and second numbers; the first number acts as a total whilst the second number is added onto the first number
 let num1 = "";
@@ -111,6 +110,45 @@ function renderCurrentOutput(output) {
   }
 }
 
+// Functions that disable or enable the arithmetic or the digit btns
+// Our parameter range will default be 'all' to indicate whether all of the btns are being targeted, but the argument 'decimal' could be passed to the range parameter, which will just control whether the decimal
+// button is enabled or disabled.
+function disableDigitBtns(bool, range="all") {
+  if (range == "all") {
+    digitBtns.forEach(btn => {
+      btn.disabled = bool;
+      if (bool) {
+        btn.classList.add('button-disabled');
+      } else {
+        btn.classList.remove('button-disabled');
+      }
+    });
+  } else {
+    digitBtns.forEach(btn => {
+      if (btn.dataset.value == '.') {
+        btn.disabled = bool;
+        if (bool) {
+          btn.classList.add('button-disabled');
+        } else {
+          btn.classList.remove('button-disabled');
+        }
+      }
+    })
+  }
+}
+
+// Function enables or disables the arithmetic buttons
+function disableArithmeticBtns(bool) {
+  arithmeticBtns.forEach(btn => {
+    btn.disabled = bool
+    if (bool) { //if we want to disable the button then we tag on the disabled button class, and indicate its disabled
+      btn.classList.add('button-disabled');
+    } else {   //if its false then we are enabling the button, so we have to indicate the button enabled.
+      btn.classList.remove('button-disabled');
+    }
+  });
+}
+
 /*
 + Function that will handle some errors that the user creates
 - Function will display in the output the type of error that happened, depending on where the error occurred in the program.
@@ -118,18 +156,11 @@ function renderCurrentOutput(output) {
 - Adds a css class onto those buttons in order to indicate that the button is disabled.
 */
 function displayError(errorType) {
-  console.log(`Error: ${errorType}`);
   currentOutputEl.textContent = errorType;
   error_detected = true; //set this to true so that the main rendering function doesn't render something that overwrites the 
-  // Disable all buttons except for the clear button, but also when clear button is pressed we re-enable all buttons again
-  digitBtns.forEach(btn => {
-    btn.classList.add('button-disabled');
-    btn.disabled = true;
-  })
-  arithmeticBtns.forEach(btn => {
-    btn.classList.add('button-disabled');
-    btn.disabled = true;
-  })
+  disableDigitBtns(true); //Disable all buttons except for the clear button, but also when clear button is pressed we re-enable all buttons again
+  disableArithmeticBtns(true);
+  
   equalBtn.classList.add('button-disabled');
   deleteBtn.classList.add('button-disabled');
   equalBtn.disabled = true;
@@ -143,6 +174,9 @@ function displayError(errorType) {
 1. Calculate the result and have num1 equal to the result. Clear num2 and the operator. Have the equation that's going to be displayed as num1 because that's the mathematical result
 that's going to be displayed. Call a function to render the equation.
 2. If the first conditional isn't met, then there's an error with the equation.
+
+Now we don't want to adjust the result with the digit btns, so after the equal button is pressed we want to disable the digit btns until they use an arithmetic, I think a boolean would do well here
+
 */
 equalBtn.addEventListener('click', function() {
   if ((num1.length > 0 && num2.length > 0) && (operator)) {
@@ -153,6 +187,8 @@ equalBtn.addEventListener('click', function() {
     renderCurrentOutput(equation);
     decimalCheck(num1) //because the first number is the only one on screen or the main focus
     // Check the decimal right here because it's a hole
+    used_equals_btn = true;
+    disableDigitBtns(true);
   } else {
     displayError("Equation Error");
   }
@@ -161,14 +197,19 @@ equalBtn.addEventListener('click', function() {
 /*
 + Each arithmetic button is linked to an event listener.
 - Function gets the id of the button, which will handle when we set a mathematical operation that will happen on the two numbers.
-
 - If they press the minus button on the first number then its going to be a negative number. 
-
 - If (num1 is empty and the btnID is minus or subtract): then make num1 a negative version which would be adding '-' to num1
 */
 arithmeticBtns.forEach(btn => {
   btn.addEventListener('click', e => {
     const btnID = e.currentTarget.dataset.id;
+
+    // If they used the equal btn then the digit btns would have gotten disabled. The user would be lead to click the arithmetic buttons
+    // If they click the arithmetic buttons, check if they used the equals btn. If they do then turn that boolean to false and call the function to disable the digit buttons.
+    if (used_equals_btn) {
+      used_equals_btn = false;
+      disableDigitBtns(false);
+    }
 
     // Checks if num1 is an empty string; also makes sure that the value of num1 is not '0' in order to make sure num1 is not zero.
     // Does the same thing, but checks for an operator as well, if its the operator then we are working on the second number 
@@ -238,14 +279,9 @@ function clearData() {
   equation = "";
   error_detected = false; //reset the error boolean as well
   renderCurrentOutput(equation); //Since equation is blank and error_detected is false, it will render nothing.
-  digitBtns.forEach(btn => {
-    btn.classList.remove('button-disabled');
-    btn.disabled = false;
-  })
-  arithmeticBtns.forEach(btn => {
-    btn.classList.remove('button-disabled');
-    btn.disabled = false;
-  })
+  disableDigitBtns(false);
+  disableArithmeticBtns(false);
+  
   equalBtn.classList.remove('button-disabled');
   deleteBtn.classList.remove('button-disabled');
   equalBtn.disabled = false;
@@ -255,17 +291,11 @@ function clearData() {
 // Calls function to clear calculator.
 clearBtn.addEventListener('click', clearData);
 
-// Check delete button because I don't it's properly deleting numbers; 6+6 then delete to 6 then adding + will result error
-
 deleteBtn.addEventListener('click', () => { //get the deleted character, if the character matches a piece of a number then change the number
   const DELETED_CHAR = equation.slice(equation.length - 1); //get the deleted character since it may provide good information
   equation = equation.slice(0, equation.length - 1); //reduce the equation, this is guaranteed  
   //if its the operator delete the current operator
-
-  console.log(`Deleted Char: ${DELETED_CHAR}, Operator: ${operator}`);
-
   if (DELETED_CHAR == mathSymbols[operator]) {
-    console.log("Okay we deleted the operator");
     operator = "";
   } else if (operator) { //else if the operator still exists then we are deleting something from the second number
     num2 = num2.slice(0, num2.length - 1);
@@ -274,24 +304,14 @@ deleteBtn.addEventListener('click', () => { //get the deleted character, if the 
     num1 = num1.slice(0, num1.length - 1);
     decimalCheck(num1);
   }
-
-  console.log(`Delete action => num1: ${num1} num2: ${num2} operator: ${operator}`);
   renderCurrentOutput(equation);
 })
 
 function decimalCheck(num) {
   if (num.includes('.')) {
-    digitBtns.forEach(btn => {
-      if (btn.dataset.value == '.') {
-        btn.disabled = true;
-      }
-    })
+    disableDigitBtns(true, 'decimal');
   } else {
-    digitBtns.forEach(btn => {
-      if (btn.dataset.value == '.') {
-        btn.disabled = false;
-      }
-    })
+    disableDigitBtns(false, 'decimal');
   } 
 }
 
@@ -309,7 +329,6 @@ digitBtns.forEach(btn => {
       decimalCheck(num1);
     } 
     equation += BTN_VALUE;
-    console.log(`num1: ${num1} num2: ${num2} operator: ${operator}`);
     renderCurrentOutput(equation);
   })
 })
