@@ -30,6 +30,11 @@ const digitBtns = document.querySelectorAll('.digit-btn');
 const arithmeticBtns = document.querySelectorAll('.arithmetic-btn');
 const equalBtn = document.getElementById('equal-btn');
 
+const directionalBtnsContainer = document.querySelector('.directional-btns-container');
+const upBtn = document.getElementById('up-btn');
+const downBtn = document.getElementById('down-btn');
+const directionalBtns = document.querySelectorAll('.directional-btn');
+
 // Boolean that controls the decimal button
 let decimal_btn_enabled = true;
 
@@ -41,7 +46,7 @@ let used_equals_btn = false;
 
 // Still need to create a class called equationEntry; start index at -1, because when we have one entry 
 let equationHistory = [];
-let equationIndex = -1;
+let equationIndex;
 // The first and second numbers; the first number acts as a total whilst the second number is added onto the first number
 let num1 = "";
 let num2 = "";
@@ -58,23 +63,18 @@ const mathSymbols = {
 };
 
 class equationEntry {
-  constructor(firstNumber, secondNumber, operation, result) {
-    this.firstNumber = firstNumber;
-    this.secondNumber = secondNumber;
+  constructor(firstNum, secondNum, operation, result) {
+    this.firstNum = firstNum.toString();
+    this.secondNum = secondNum.toString();
     this.operation = operation;
     this.result = result;
   }
 }
 
 // This function will show and soon store the previous output 
+// The equation index is already at 0, so only when we have more than one item
+// Then we will increment the index
 function renderPreviousOutput(firstNum, secondNum, operation, result) {
-  let entry = new equationEntry(firstNum, secondNum, operation, result);
-  equationHistory.push(entry);
-  if (equationHistory.length == 1) { // if its the first entry then initialize the index as 0
-    equationIndex = 0;
-  } else { //Else, we will just increase the index since the length here will be bigger than one and increasing
-    equationIndex += 1;
-  }
   previousOutputEl.textContent = `${firstNum} ${mathSymbols[operation]} ${secondNum} = ${result}`;
 }
 
@@ -87,6 +87,33 @@ function renderCurrentOutput(output) {
   }
 }
 
+directionalBtns.forEach(btn => {
+  btn.addEventListener('click', e => {
+    const btnID = e.currentTarget.dataset.id;
+    if (btnID == 'up') {
+      equationIndex -= 1;
+      if (equationIndex < 0) {
+        equationIndex = equationHistory.length - 1;
+      }
+    } else {
+      equationIndex += 1;
+      if (equationIndex > equationHistory.length - 1) {
+        equationIndex = 0;
+      }
+    }
+    const {firstNum, secondNum, operation, result} = equationHistory[equationIndex];
+    num1 = result; //let num1 be the answer
+    num2 = "";
+    equation = result;
+    console.log(`Switch => n1: ${num1} n2: ${num2} OP: ${operator}`);
+    console.log(`equation: ${equation}`);
+    renderPreviousOutput(firstNum, secondNum, operation, result);
+    renderCurrentOutput(result);
+    // Set this equal to true so it behaves like so 
+    used_equals_btn = true; 
+  })
+})
+
 /*
 + Function that will handle some errors that the user creates
 - Function will display in the output the type of error that happened, depending on where the error occurred in the program.
@@ -97,8 +124,7 @@ function displayError(errorType) {
   currentOutputEl.textContent = errorType;
   error_detected = true; //set this to true so that the main rendering function doesn't render something that overwrites the 
   disableDigitBtns(true); //Disable all buttons except for the clear button, but also when clear button is pressed we re-enable all buttons again
-  disableArithmeticBtns(true);
-  
+  disableArithmeticBtns(true);  
   equalBtn.classList.add('button-disabled');
   deleteBtn.classList.add('button-disabled');
   equalBtn.disabled = true;
@@ -139,8 +165,21 @@ function calculate(firstNum, secondNum, operation) {
   if (!Number.isInteger(result) && typeof(result) !== 'String') {
     result = Number(result).toFixed(3); //Number(something).toFixed(value) is the right format
   }
+  result = result.toString();
+  // Store the numbers and if there are more than 1 then buttons to scroll through the history
+  // When you calculate it takes to you to the position of the current entry
+  const entry = new equationEntry(firstNum, secondNum, operation, result);
+  equationHistory.push(entry);
+  if (equationHistory.length > 1) {
+    directionalBtnsContainer.classList.remove('content-hidden');
+  }
+  equationIndex = equationHistory.length - 1;
+  
   renderPreviousOutput(firstNum, secondNum, operation, result);
-  return result.toString();
+  
+  console.log(`equationHistory: ${equationHistory}`);
+
+  return result;
 };
 
 function decimalCheck(num) {
@@ -207,6 +246,7 @@ function clearData() {
   equalBtn.disabled = false;
   deleteBtn.disabled = false;
 }
+
 /*
 + Eventlistenerwith the equal btn handles calculations made with the equal button
 - Checks if the first and second number (which are strings) have a length greater than 1. If this is true then the user entered numbers instead of leaving the numbers blank.
@@ -219,6 +259,9 @@ Now we don't want to adjust the result with the digit btns, so after the equal b
 
 */
 equalBtn.addEventListener('click', function() {
+
+  console.log(`Equal Btn: ${num1}, ${num2}, ${operator}`);
+
   if ((num1.length > 0 && num2.length > 0) && (operator)) {
     num1 = calculate(num1, num2, operator);
     num2 = "";
@@ -243,6 +286,7 @@ equalBtn.addEventListener('click', function() {
 arithmeticBtns.forEach(btn => {
   btn.addEventListener('click', e => {
     const btnID = e.currentTarget.dataset.id;
+
 
     // If they used the equal btn then the digit btns would have gotten disabled. The user would be lead to click the arithmetic buttons
     // If they click the arithmetic buttons, check if they used the equals btn. If they do then turn that boolean to false and call the function to disable the digit buttons.
@@ -274,23 +318,24 @@ arithmeticBtns.forEach(btn => {
       // And I think we only need to update the num1 variable, and the equation variable since we aren't doing anything with an operator or num2.
       
     } else if (!operator) { 
+      
       // [number] [operator] situation; If there is no operator then they are just setting a new operator
       // set the operator as the id, and add the operator onto the equation to be displayed
       operator = btnID; 
+
+
       equation += mathSymbols[operator];
 
     // If there's an operator, and num2 has length, and num2 is not a zero, then we know that num2 is an actual non-zero number
     // Operator is already set  [number] [operator] [number] [new operator] situation
     // Assign num1 to the result, empty num2 because it's been calculated, assign operator to the ID of the btn, and update the equation variable. 
     } else if (operator && (num2.length > 0 && parseFloat(num2) !== 0)) {
-
       num1 = calculate(num1, num2, operator);
       num2 = "";      
       operator = btnID; //set the new [operator]
       equation = `${num1}${mathSymbols[operator]}`;
 
     } else if (operator && (num2 == false)) {
-      
       // Checks if Operator exists and num is a false value. Situation is [number] [operator] [0 or a null value] [new operator]
       // Make sure if num2 (type string) is a zero, to check if num2 is the number 0.
       //Do the same thing, as the above clause them.
@@ -341,70 +386,4 @@ digitBtns.forEach(btn => {
     equation += BTN_VALUE;
     renderCurrentOutput(equation);
   })
-})
-
-document.addEventListener('keydown', e => {
-  const KEY_CODE = e.code;
-  let keyValue;
-  switch(KEY_CODE) {
-    case 'Numpad0':
-      keyValue = 0;
-      break;
-    case 'Numpad1':
-      keyValue = 1;
-      break;
-    case 'Numpad2':
-      keyValue = 2;
-      break;
-    case 'Numpad3':
-      keyValue = 3;
-      break;
-    case 'Numpad4':
-      keyValue = 4;
-      break;
-    case 'Numpad5':
-      keyValue = 5;
-      break;
-    case 'Numpad6':
-      keyValue = 6;
-      break;
-    case 'Numpad7':
-      keyValue = 7;
-      break;
-    case 'Numpad8':
-      keyValue = '8';
-      break;
-    case 'Numpad9':
-      keyValue = 9;
-      break;
-    case 'NumpadDecimal':
-      keyValue = '.';
-      break;
-
-    // Buttons for add, subtract, multiply, divide, modulo, delete, equal, and clear
-    case 'ArrowUp':
-      keyValue = '.';
-      break;
-    case 'ArrowDown':
-      keyValue = '.';
-      break;
-    case 'NumpadAdd':
-      keyValue = '.';
-      break;
-    case 'NumpadSubtract':
-      keyValue = '.';
-      break;
-    case 'NumpadMultiply':
-      keyValue = '.';
-      break;
-    case 'NumpadDivide':
-      keyValue = '.';
-      break;
-    case 'NumpadEnter':
-      keyValue = "Enter";
-      break;
-    case 'Digit5': //can't really have percent so this is the best we could do
-      keyValue = 'Modulo';
-      break;
-  }
 })

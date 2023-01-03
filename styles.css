@@ -62,11 +62,20 @@ header {
   padding: 1.2em 0;
 }
 
+button {
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+
+
+
 /* #616161 is button color */
 /* Main container styling */
 .main {
   background-color: var(--clr-primary-10);
   padding: 1.5em 1em;
+  position: relative;
 }
 
 /* Calculator styling */
@@ -143,4 +152,28 @@ header {
 .button-disabled {
   background: lemonchiffon;
   color: var(--clr-black);
+}
+
+/* extra-btns-container styling*/
+.directional-btns-container {
+  position: absolute;
+  top: 40%;
+  left: 25%;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+.directional-btns-container > * {
+  background-color: lime;
+  color: var(--clr-white);
+  border: none;
+  padding: 1em 2em;
+  border-radius: 6px;
+}
+.directional-btns-container > *:hover {
+  color: lime;
+  background-color: white;
+}
+.content-hidden {
+  display: none;
 }
