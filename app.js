@@ -1,48 +1,56 @@
 // Output section
+/*
+- previousOutputEl: Html paragraph element that represents the previous calculation
+- currentOutputEl: Html paragraph element that represents the current equation that the user is manipulating.
+*/
 const previousOutputEl = document.getElementById('previous-output');
 const currentOutputEl = document.getElementById('current-output'); 
 
-// Various buttons
+// Calculator buttons
+/*
+- clearBtn: html button element that will clear the current output or equation if clicked, and if clicked when the current output is empty, it
+will clear all data from the calculator.
+- deleteBtn: Deletes current digit or symbol in the output
+- digitBtns: nodelist that represents buttons linked to digits 0 to 9, and the decimal button. When clicked it will add these digits to the equation
+and add those digits onto variables representing numbers.
+- arithmeticBtns: Nodelist representing mathematical operation buttons such as add, subtract, multiply, divide, and modulo. However, it will calculate
+the answer between two numbers if the user tries have more than 2 numbers on screen.
+- equalBtn: The equal or equate button that will calculate the answer between two numbers.
+*/
 const clearBtn = document.getElementById('clear-btn');
 const deleteBtn = document.getElementById('delete-btn');
 const digitBtns = document.querySelectorAll('.digit-btn');
 const arithmeticBtns = document.querySelectorAll('.arithmetic-btn');
 const equalBtn = document.getElementById('equal-btn');
 
+// Calculator history section
+/*
+- directionalBtnsContainer: Div element that contains up and down button for traversing the calculation history of the calculator.
+- directionalBtns: Nodelist with the up and down buttons. The up button will show the previous calculations in the calculator's history, whilst
+the down button will show more recent calculations.
+*/
 const directionalBtnsContainer = document.querySelector('.directional-btns-container');
-const upBtn = document.getElementById('up-btn');
-const downBtn = document.getElementById('down-btn');
 const directionalBtns = document.querySelectorAll('.directional-btn');
 
-// Boolean that controls the decimal button
+/* 
+- decimal_btn_enabled: Boolean that controls whether the decimal button is available to be used.
+- error-detected: Boolean that records if an error happens such as a division error, equation error, etc.
+- used_equals_btn: Boolean that checks if the user has used the equals button in order to do a calculation. Useful because we don't want the user
+directly adding digits onto a result, so by having this boolean, we can know when they've used the equals button and act accordingly.
+- equationHistory: Array that will contain equationEntry objects.
+- equationIndex: Represents the positions of the equationHistory array, allowing the user to access different calculations in the calculator's history
+- equationEntry: Object that contains the two numbers, operation, and mathematical result of a calculation.
+- num1: Variable representing the first number hte user does calculations with. Also acts as a total where the result of a + b, is assigned by to a and b is emptied so that a new number can act as b.
+- num2: Variable representing the second number that the user does calculations with.
+- operator: Strings such as 'add', 'subtract', 'multiply', 'divide', and 'mod' that represent the arithmetic operation that is used on two numbers.
+- equation: Variable that contains digits and symbols to show the equation being done on screen; note this variable only handles the visuals and no actual mathematical operations occur with this variable.
+- mathSymbols: Object containing mathematical symbols that will be added to the equation variable so that the user's input can be accurately rendered on screen.
+*/
 let decimal_btn_enabled = true;
-
-// Boolean that records if an error happens
 let error_detected = false;
-
-// Boolean for the recording when the equals btn was used
 let used_equals_btn = false;
-
-// Still need to create a class called equationEntry; start index at -1, because when we have one entry 
 let equationHistory = [];
 let equationIndex;
-// The first and second numbers; the first number acts as a total whilst the second number is added onto the first number
-let num1 = "";
-let num2 = "";
-let operator = "";
-let equation = "";
-
-// Mathsymbols that will be rendered on screen
-const mathSymbols = {
-  'mod': '%',
-  'divide': '/',
-  'multiply': 'x',
-  'subtract': '-',
-  'add': '+'
-};
-
-// Constructor that creates equationEntry objects, that will be put into the equationHistory array
-// All values are strings since the program relies on identifying the value of the 'numbers' as strings
 class equationEntry {
   constructor(firstNum, secondNum, operation, result) {
     this.firstNum = firstNum.toString();
@@ -51,12 +59,25 @@ class equationEntry {
     this.result = result;
   }
 }
+let num1 = "";
+let num2 = "";
+let operator = "";
+let equation = "";
+const mathSymbols = {
+  'mod': '%',
+  'divide': '/',
+  'multiply': 'x',
+  'subtract': '-',
+  'add': '+'
+};
 
-// This function will show and soon store the previous output 
-// The equation index is already at 0, so only when we have more than one item
-// Then we will increment the index
+/*
++ Function will render the previous calculation on the calculator. Accepts 4 string parameters from a equationEntry object.
+- That object represents numbers from a previous calcluation, and this function will render the values from that previous calculation
+- The parameter firstNum has a default value of "FULL_CLEAR", so that when this function is called without arguments, it means the user wants to clear the calculator.
+- As a result, when this happens, the previous output or previous calculation will be cleared.
+*/
 function renderPreviousOutput(firstNum = "FULL_CLEAR", secondNum, operation, result) {
-
   if (firstNum == 'FULL_CLEAR') {
     previousOutputEl.textContent = "";
   } else {
@@ -64,41 +85,19 @@ function renderPreviousOutput(firstNum = "FULL_CLEAR", secondNum, operation, res
   }
 }
 
-// When we calculate with the arithmetic buttons it does the current equation so like 16+, or when its the equal button then its just 5; this is differentiated from the render previous function
-// If error_detected is true, then we won't render any equation, but if its false, then we will render equations like normal.
+/*
++ Function will render the current equation that the user is inputting; parameter 'output' represents equation
+- Checks the error_detected boolean, so if error detected is false, then it renders the equations like usual, but if an error was detected as indicated by the boolean, then nothing will be rendered by this function.
+- Displaying the error will be handled by the displayError function itself. 
+NOTE: The reason why this error_detected boolean is needed and how we can't just use renderCurrentOutput(ErrorType) because the equal and arithmetic buttons will call the renderCurrentOutput function after the 
+error handling function. The boolean stops those extra renders and lets the error handling function display the error without being overwritten.
+*/
 function renderCurrentOutput(output) {
   if (!error_detected) {
     output = output.toString(); //Ensure that the output or data being rendered is actually a string so we can do tests with it
     currentOutputEl.textContent = output;
   }
 }
-
-directionalBtns.forEach(btn => {
-  btn.addEventListener('click', e => {
-    const btnID = e.currentTarget.dataset.id;
-    if (btnID == 'up') {
-      equationIndex -= 1;
-      if (equationIndex < 0) {
-        equationIndex = equationHistory.length - 1;
-      }
-    } else {
-      equationIndex += 1;
-      if (equationIndex > equationHistory.length - 1) {
-        equationIndex = 0;
-      }
-    }
-    const {firstNum, secondNum, operation, result} = equationHistory[equationIndex];
-    num1 = result; //let num1 be the answer
-    num2 = "";
-    equation = result;
-    console.log(`Switch => n1: ${num1} n2: ${num2} OP: ${operator}`);
-    console.log(`equation: ${equation}`);
-    renderPreviousOutput(firstNum, secondNum, operation, result);
-    renderCurrentOutput(result);
-    // Set this equal to true so it behaves like so 
-    used_equals_btn = true; 
-  })
-})
 
 /*
 + Function that will handle some errors that the user creates
@@ -124,7 +123,6 @@ function displayError(errorType) {
 - Finally it returns the result as a string
 */
 function calculate(firstNum, secondNum, operation) {
-  // Convert the numbers (type string) into type float
   firstNum = parseFloat(firstNum);
   secondNum = parseFloat(secondNum);
   let result;
@@ -148,12 +146,17 @@ function calculate(firstNum, secondNum, operation) {
       }
     }
   }
-  if (!Number.isInteger(result) && typeof(result) !== 'String') {
-    result = Number(result).toFixed(3); //Number(something).toFixed(value) is the right format
+  // If the result is a decimal or floating point then we want to round it
+  if (!Number.isInteger(result)) { 
+    result = Number(result).toFixed(3); 
   }
-  result = result.toString(); //have result as a string because it will be assigned to num1, and the num1/num2 variables need to be strings so that the program can correctly identify them
-  // Store the numbers and if there are more than 1 then buttons to scroll through the history
-  // When you calculate it takes to you to the position of the current entry
+  /*
+  - Have the result changed to a string because it will be assigned to num1, and the num1/num2 variables need to be strings so that the program can correctly identify them
+  - Create an 'equationEntry' object, which has data about the calculation, and store it in the equationHistory array for later.
+  - When you do a calculation update the index position so that when user does a calculation it takes them back to the latest calculations in the history.
+  - Then render the previous output and return 'result', which will be assigned to the num1 value of the new calculation. 
+  */
+  result = result.toString(); 
   const entry = new equationEntry(firstNum, secondNum, operation, result);
   equationHistory.push(entry);
   if (equationHistory.length > 1) {
@@ -161,12 +164,14 @@ function calculate(firstNum, secondNum, operation) {
   }
   equationIndex = equationHistory.length - 1;
   renderPreviousOutput(firstNum, secondNum, operation, result);
-  
-  console.log(`Calculation Triggered: firstNum = ${firstNum}, secondNum = ${secondNum}\nEquation: ${equation}, equationHistory: ${equationHistory}, equationIndex: ${equationIndex}`);
-
   return result;
 };
 
+/*
++ Function controls whether the decimal button will be accessible depending on whether the current number passed in has a decimal or not. These numbers being the string variables num1 and num2.
+- If the current number already has a decimal point then the decimal button can't be pressed again and vice versa. Function disableDigitBtns is called with boolean and 'decimal' to indicate whether we are disabling
+or enabling a button, and 'decimal' indicates that just the decimal button is being disabled or enabled in this case.
+*/
 function decimalCheck(num) {
   if (num.includes('.')) {
     disableDigitBtns(true, 'decimal');
@@ -175,9 +180,12 @@ function decimalCheck(num) {
   }
 }
 
-// Functions that disable or enable the arithmetic or the digit btns
-// Our parameter range will default be 'all' to indicate whether all of the btns are being targeted, but the argument 'decimal' could be passed to the range parameter, which will just control whether the decimal
-// button is enabled or disabled.
+/*
++ Function that disables or enables the digitBtns.
+- The boolean 'true' indicates that the digit buttons will be disabled, and false means that they will be enabled.
+- The parameter range has the default value 'all' to indicate that all buttons are being enabled or disabled. The decimalCheck function will have the range argument = 'decimal', which indicates that only the 
+decimal button will be enabled or disabled
+*/
 function disableDigitBtns(bool, range="all") {
   if (range == "all") {
     digitBtns.forEach(btn => {
@@ -202,26 +210,32 @@ function disableDigitBtns(bool, range="all") {
   }
 }
 
-// Function enables or disables the arithmetic buttons
+/*
++ Function enables or disables the arithmetic buttons based on a boolean argument.
+- if we want to disable the button then we tag on the disabled button class, and indicate its disabled
+- if its false then we are enabling the button, so we have to indicate the button enabled.
+*/
 function disableArithmeticBtns(bool) {
   arithmeticBtns.forEach(btn => {
     btn.disabled = bool
-    if (bool) { //if we want to disable the button then we tag on the disabled button class, and indicate its disabled
+    if (bool) { 
       btn.classList.add('button-disabled');
-    } else {   //if its false then we are enabling the button, so we have to indicate the button enabled.
+    } else {   
       btn.classList.remove('button-disabled');
     }
   });
 }
 
-// Function clears the data. Clears both numbers, operator, and the equation
-// If there was an error that was triggered then the user would be lead to execute this function, which 
-// allows buttons to be clicked again after being disabled.
+/*
++ Function clears the data. Clears both numbers, operator, and the equation
+- Clears current numbers, operators, equation, booleans, and renables any disabled button.
+- If the equation variable is already blank, then that means after clearing the current line on the calculator, the user wants to fully clear the calculator, which clears the history of the calculator.
+- If an error was triggered this function would be executed to clear the data the calculator, which allows buttons to be clicked again after being disabled.
+*/
 function clearData() {
   num1 = "";
   num2 = "";
   operator = "";
-
   // If the equation empty then they want a full clear 
   if (equation == "") { 
     equationHistory = [];
@@ -229,21 +243,52 @@ function clearData() {
     renderPreviousOutput(); 
     directionalBtnsContainer.classList.remove('content-hidden');
   }
-
   equation = "";
   used_equals_btn = false;
-  error_detected = false; //reset the booleans as well
-  renderCurrentOutput(""); //Since equation is blank and error_detected is false, it will render nothing.
+  error_detected = false; 
+  renderCurrentOutput("");
   disableDigitBtns(false);
   disableArithmeticBtns(false); 
   equalBtn.classList.remove('button-disabled');
   deleteBtn.classList.remove('button-disabled');
   equalBtn.disabled = false;
   deleteBtn.disabled = false;
-
-
-  console.log(`Cleared => EquationHistory: ${equationHistory}\nEquationIndex: ${equationIndex}\nEquation: ${equation}`);
 }
+
+/*
++ For the up and down buttons, add a click event listener that allows the user to traverse up and down through the history of the calculator.
+- Get the id of the button to know whether we are accessing a previous or newer calculation. The calculations are in an array, and the most recent calculations are the last elements in the array.
+- Traverse through the array by incrementing or decrementing the index value, and if the user goes beyond index 0, transfer to the last index value. Or if they go beyond the upper bound, then put them at index 0.
+*/
+directionalBtns.forEach(btn => {
+  btn.addEventListener('click', e => {
+    const btnID = e.currentTarget.dataset.id;
+    if (btnID == 'up') {
+      equationIndex -= 1;
+      if (equationIndex < 0) {
+        equationIndex = equationHistory.length - 1;
+      }
+    } else {
+      equationIndex += 1;
+      if (equationIndex > equationHistory.length - 1) {
+        equationIndex = 0;
+      }
+    }
+    /*
+    - Then get the object in equationHistory at that index, values of that object.
+    - let the math result be num1 and empty num2. Then set equation to result so that user's equation is up to date; this is in case the user wants to use a mathematical result from a previous entry
+    - Call functions to render the digits and math
+    - Set the used_equals_btn boolean to true because we don't want the user to directly manipulate the result of a previous entry by addding on digits or whatnot, makes them use an arithmetic operator first.
+    */
+    const {firstNum, secondNum, operation, result} = equationHistory[equationIndex];
+    num1 = result; //let num1 be the answer
+    num2 = "";
+    equation = result;
+    renderPreviousOutput(firstNum, secondNum, operation, result);
+    renderCurrentOutput(result);  
+    used_equals_btn = true; 
+  })
+})
 
 /*
 + Eventlistenerwith the equal btn handles calculations made with the equal button
@@ -275,27 +320,26 @@ equalBtn.addEventListener('click', function() {
 /*
 + Each arithmetic button is linked to an event listener.
 - Function gets the id of the button, which will handle when we set a mathematical operation that will happen on the two numbers.
-- If they press the minus button on the first number then its going to be a negative number. 
-- If (num1 is empty and the btnID is minus or subtract): then make num1 a negative version which would be adding '-' to num1
 */
 arithmeticBtns.forEach(btn => {
   btn.addEventListener('click', e => {
     const btnID = e.currentTarget.dataset.id;
-
-    // If they used the equal btn then the digit btns would have gotten disabled. The user would be lead to click the arithmetic buttons
-    // If they click the arithmetic buttons, check if they used the equals btn. If they do then turn that boolean to false and call the function to disable the digit buttons.
+    /* 
+    - If they used the equal btn then the digit btns would have gotten disabled. The user would be lead to click the arithmetic buttons
+    - If they click the arithmetic buttons, check if they used the equals btn. If they do then turn that boolean to false and call the function to disable the digit buttons.
+    */
     if (used_equals_btn) {
       used_equals_btn = false;
       disableDigitBtns(false);
     }
-
-    // Checks if num1 is an empty string; also makes sure that the value of num1 is not '0' in order to make sure num1 is not zero.
-    // Does the same thing, but checks for an operator as well, if its the operator then we are working on the second number 
-    if ((num1 == false && num1 !== '0') || ((num2 == false && num2 !== '0') && operator)) { //second clause makes it possible for subtract to go through
-
-      //if it isn't subtraction then they aren't negating, which means they are putting in an incorrect value
+    /*
+    - First clause makes sure we can enter a negative number for num1, we press an arithmetic button first so num1 would be an empty string. If the operator is subtract we know they are trying to type in a negative number
+    so we will allow it. Else if it was any other operator then we would throw an error since num1 is missing and they are trying to do an operation other than subtract (negate in this case)
+    - Second clause: Makes it possible to enter a negative number for num2 because once the operator is set, we know the user is working on the second number because num1 is finished since the operator is already set
+    so the number for the operator is set. And yes if the operator is false or isn't set then we are working on teh first number
+    */
+    if ((num1 === "") || (num2 === "" && operator)) {  
       if (btnID == 'subtract') {        
-        // If the operator is set then we are working on the second number, else we are working on the first number
         if (operator) {
           num2 = '-' + num2;
           equation += '-';
@@ -306,57 +350,50 @@ arithmeticBtns.forEach(btn => {
       } else {
         displayError("Missing Number Error");
       }
-      // if we are going to do this, then we should remove that clause that changes the arithmetic automatically, and leave that to the delete button
-      // This means they are using the minus operator before filling in num1, which means they are trying to have a negative version of num1
-      // In this case an operator is not set for the equation, but we are simply negating; right now we are working on negating the first number
-      // And I think we only need to update the num1 variable, and the equation variable since we aren't doing anything with an operator or num2.
-      
     } else if (!operator) { 
-      
-      // [number] [operator] situation; If there is no operator then they are just setting a new operator
-      // set the operator as the id, and add the operator onto the equation to be displayed
+      /*
+      - [number] [operator] situation; If there is no operator then they are just setting a new operator
+      - set the operator as the id, and add the operator onto the equation to be displayed
+      */
       operator = btnID; 
-
-
       equation += mathSymbols[operator];
-
-    // If there's an operator, and num2 has length, and num2 is not a zero, then we know that num2 is an actual non-zero number
-    // Operator is already set  [number] [operator] [number] [new operator] situation
-    // Assign num1 to the result, empty num2 because it's been calculated, assign operator to the ID of the btn, and update the equation variable. 
-    } else if (operator && (num2.length > 0 && parseFloat(num2) !== 0)) {
+    } else if (operator && num2.length > 0) {
+      /*
+      - If there's an operator, and num2 has length, then we know that num2 is an actual number
+      - Operator is already set  [number] [operator] [number] [new operator] situation
+      - Assign num1 to the result, empty num2 because it's been calculated, assign operator to the ID of the btn, and update the equation variable. 
+      NOTE: This handles all calculations made when the user doesn't use the equals button, but rather when the user has both num1 and num2 set to a value, and then they press an arithmetic button, then it makes 
+      a calculation and sets the result of that calculation to num1, to make space for another number to be entered by the user by emptying num2.
+      */
       num1 = calculate(num1, num2, operator);
       num2 = "";      
       operator = btnID; //set the new [operator]
       equation = `${num1}${mathSymbols[operator]}`;
-
-    } else if (operator && (num2 == false)) {
-      // Checks if Operator exists and num is a false value. Situation is [number] [operator] [0 or a null value] [new operator]
-      // Make sure if num2 (type string) is a zero, to check if num2 is the number 0.
-      //Do the same thing, as the above clause them.
-      if (num2 === '0') { 
-        num1 = calculate(num1, num2, operator);
-        num2 = "";
-        operator = btnID; //set the new operator
-        equation = `${num1}${mathSymbols[operator]}`;
-      } 
-    }
-    // After equation, numbers, and operator have been updated, then render the new equation.
+    } 
     renderCurrentOutput(equation);
   })    
 })
 
-// Calls function to clear calculator.
+// Gives clear button an eventlistener that calls function to clear calculator.
 clearBtn.addEventListener('click', clearData);
 
-deleteBtn.addEventListener('click', () => { //get the deleted character, if the character matches a piece of a number then change the number
-  const DELETED_CHAR = equation.slice(equation.length - 1); //get the deleted character since it may provide good information
-  equation = equation.slice(0, equation.length - 1); //reduce the equation, this is guaranteed  
+/*
++ Eventlistener function deletes current character on the equation or output
+- get the deleted character since it may provide good information, and reduce the equation by one character with slice (this will always happen).
+- If the deleted character matches a property of our mathSymbols object, which means its an operator, then clear the operator because the user is deleting an oeprator on their screen.
+- Else if the deleted character isn't the operator then it must mean that the operator is still there, or it has already been deleted. If the operator is still set, then we are deleting from the num2 variable, else 
+we are deleting from the num1 variable.
+- After we delete characters from the numbers, then check if the number still has a decimal or not so that we can decide if the user can still use the decimal button.
+*/
+deleteBtn.addEventListener('click', () => { 
+  const DELETED_CHAR = equation.slice(equation.length - 1); 
+  equation = equation.slice(0, equation.length - 1);   
   //if its the operator delete the current operator
   if (DELETED_CHAR == mathSymbols[operator]) {
     operator = "";
-  } else if (operator) { //else if the operator still exists then we are deleting something from the second number
+  } else if (operator) { 
     num2 = num2.slice(0, num2.length - 1);
-    decimalCheck(num2); //could have deleted a decimal so do a decimal check
+    decimalCheck(num2);
   } else if (!operator) {
     num1 = num1.slice(0, num1.length - 1);
     decimalCheck(num1);
@@ -364,17 +401,20 @@ deleteBtn.addEventListener('click', () => { //get the deleted character, if the 
   renderCurrentOutput(equation);
 })
 
-// Have the decimal checker in the delete button
+/*
++ Add an eventlistener to each digit button so that if we click on the button, we add its value to the equation. The value is decided by its data attribute which we've set in the html.
+- if operator is set then we go to the second number, else the first number is the one that's being manipulated. However, regardless if the operator is set or not, the value of the button must be added to the
+equation variable, which is responsible for the visuals only, while the num1 and num2 are involved in actual calculations and math.
+- After adding a digit value (0-9) or a decimal (.) to num1 or num2 we need to check if the number has a decimal in it to see if the user is able to use the decimal button or not.
+*/
 digitBtns.forEach(btn => {
   btn.addEventListener('click', (e) => {
     const BTN_VALUE = e.currentTarget.dataset.value;
-    // if operator is set then we go to the second number else the first number
-    // Or if the user used the equal btn to calculate an answer
     if (operator) { 
       num2 += BTN_VALUE;
-      decimalCheck(num2); //once it switches to the second number then decimal check is going to be reset since num2 has no decimal.
+      decimalCheck(num2);
     } else {
-      num1 += BTN_VALUE; //user enters the period and after we check and disable. 
+      num1 += BTN_VALUE; 
       decimalCheck(num1);
     } 
     equation += BTN_VALUE;
