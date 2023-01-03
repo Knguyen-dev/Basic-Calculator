@@ -1,24 +1,3 @@
-/*
-1. Create functions for add, subtract, multiply, and divide
-2. create function operate(operator, num1, num2) that calls one of the above functions
-3. Create buttons for hte digits, functions and calculate (equals key)
-4. Create a display and functions that shows the numbers when things are being pressed; store the value of the display in a variable
-5. Create a clear button
-6. Round the numbers so decimals 
-7. Do error handling for when someone presses equals too early 
-8. Pressing clear should wipe out all existing data, like a real clear
-9. Display a message when the user divides by 0 and handle the error so that the calculator doesn't crash.
-10. Let the user have decimal or floating points, however make sure they can't type more than one since things like "12.3.45" could happen. So disable the button when there's a decimal 
-already in the display
-11. Add a backspace
-12. Add keyboard support, be care ful some keys like '/' don't behave properly so event.preventDefault() will be used to solve the problem
-+ Or something similar
-- Store the first number when the user presses an operator and save the operation that was chosen, then call the operate function when the equal button is pressed.
-Several operations should be able to be done in a row: 12 + 7 - 5 * 3 = 42; okay looks worrying but please wait for the explanation.
-NOTE: Only a pair of numbers should be on screen at a time. Let's say you press 12 then plus then 7 then minus. First it should 12 + 7 to get 19, and then 19 - something
-maybe create an object called equationinput that will record a specific input 
-*/
-
 // Output section
 const previousOutputEl = document.getElementById('previous-output');
 const currentOutputEl = document.getElementById('current-output'); 
@@ -53,7 +32,7 @@ let num2 = "";
 let operator = "";
 let equation = "";
 
-// Mathsymbols
+// Mathsymbols that will be rendered on screen
 const mathSymbols = {
   'mod': '%',
   'divide': '/',
@@ -62,6 +41,8 @@ const mathSymbols = {
   'add': '+'
 };
 
+// Constructor that creates equationEntry objects, that will be put into the equationHistory array
+// All values are strings since the program relies on identifying the value of the 'numbers' as strings
 class equationEntry {
   constructor(firstNum, secondNum, operation, result) {
     this.firstNum = firstNum.toString();
@@ -74,8 +55,13 @@ class equationEntry {
 // This function will show and soon store the previous output 
 // The equation index is already at 0, so only when we have more than one item
 // Then we will increment the index
-function renderPreviousOutput(firstNum, secondNum, operation, result) {
-  previousOutputEl.textContent = `${firstNum} ${mathSymbols[operation]} ${secondNum} = ${result}`;
+function renderPreviousOutput(firstNum = "FULL_CLEAR", secondNum, operation, result) {
+
+  if (firstNum == 'FULL_CLEAR') {
+    previousOutputEl.textContent = "";
+  } else {
+    previousOutputEl.textContent = `${firstNum} ${mathSymbols[operation]} ${secondNum} = ${result}`;
+  }
 }
 
 // When we calculate with the arithmetic buttons it does the current equation so like 16+, or when its the equal button then its just 5; this is differentiated from the render previous function
@@ -165,7 +151,7 @@ function calculate(firstNum, secondNum, operation) {
   if (!Number.isInteger(result) && typeof(result) !== 'String') {
     result = Number(result).toFixed(3); //Number(something).toFixed(value) is the right format
   }
-  result = result.toString();
+  result = result.toString(); //have result as a string because it will be assigned to num1, and the num1/num2 variables need to be strings so that the program can correctly identify them
   // Store the numbers and if there are more than 1 then buttons to scroll through the history
   // When you calculate it takes to you to the position of the current entry
   const entry = new equationEntry(firstNum, secondNum, operation, result);
@@ -174,10 +160,9 @@ function calculate(firstNum, secondNum, operation) {
     directionalBtnsContainer.classList.remove('content-hidden');
   }
   equationIndex = equationHistory.length - 1;
-  
   renderPreviousOutput(firstNum, secondNum, operation, result);
   
-  console.log(`equationHistory: ${equationHistory}`);
+  console.log(`Calculation Triggered: firstNum = ${firstNum}, secondNum = ${secondNum}\nEquation: ${equation}, equationHistory: ${equationHistory}, equationIndex: ${equationIndex}`);
 
   return result;
 };
@@ -236,15 +221,28 @@ function clearData() {
   num1 = "";
   num2 = "";
   operator = "";
+
+  // If the equation empty then they want a full clear 
+  if (equation == "") { 
+    equationHistory = [];
+    equationIndex = 0;
+    renderPreviousOutput(); 
+    directionalBtnsContainer.classList.remove('content-hidden');
+  }
+
   equation = "";
-  error_detected = false; //reset the error boolean as well
-  renderCurrentOutput(equation); //Since equation is blank and error_detected is false, it will render nothing.
+  used_equals_btn = false;
+  error_detected = false; //reset the booleans as well
+  renderCurrentOutput(""); //Since equation is blank and error_detected is false, it will render nothing.
   disableDigitBtns(false);
   disableArithmeticBtns(false); 
   equalBtn.classList.remove('button-disabled');
   deleteBtn.classList.remove('button-disabled');
   equalBtn.disabled = false;
   deleteBtn.disabled = false;
+
+
+  console.log(`Cleared => EquationHistory: ${equationHistory}\nEquationIndex: ${equationIndex}\nEquation: ${equation}`);
 }
 
 /*
@@ -259,9 +257,6 @@ Now we don't want to adjust the result with the digit btns, so after the equal b
 
 */
 equalBtn.addEventListener('click', function() {
-
-  console.log(`Equal Btn: ${num1}, ${num2}, ${operator}`);
-
   if ((num1.length > 0 && num2.length > 0) && (operator)) {
     num1 = calculate(num1, num2, operator);
     num2 = "";
@@ -286,7 +281,6 @@ equalBtn.addEventListener('click', function() {
 arithmeticBtns.forEach(btn => {
   btn.addEventListener('click', e => {
     const btnID = e.currentTarget.dataset.id;
-
 
     // If they used the equal btn then the digit btns would have gotten disabled. The user would be lead to click the arithmetic buttons
     // If they click the arithmetic buttons, check if they used the equals btn. If they do then turn that boolean to false and call the function to disable the digit buttons.
