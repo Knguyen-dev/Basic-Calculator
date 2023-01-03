@@ -39,9 +39,9 @@ let error_detected = false;
 // Boolean for the recording when the equals btn was used
 let used_equals_btn = false;
 
-// Still need to create a class called equationEntry
+// Still need to create a class called equationEntry; start index at -1, because when we have one entry 
 let equationHistory = [];
-
+let equationIndex = -1;
 // The first and second numbers; the first number acts as a total whilst the second number is added onto the first number
 let num1 = "";
 let num2 = "";
@@ -57,6 +57,54 @@ const mathSymbols = {
   'add': '+'
 };
 
+class equationEntry {
+  constructor(firstNumber, secondNumber, operation, result) {
+    this.firstNumber = firstNumber;
+    this.secondNumber = secondNumber;
+    this.operation = operation;
+    this.result = result;
+  }
+}
+
+// This function will show and soon store the previous output 
+function renderPreviousOutput(firstNum, secondNum, operation, result) {
+  let entry = new equationEntry(firstNum, secondNum, operation, result);
+  equationHistory.push(entry);
+  if (equationHistory.length == 1) { // if its the first entry then initialize the index as 0
+    equationIndex = 0;
+  } else { //Else, we will just increase the index since the length here will be bigger than one and increasing
+    equationIndex += 1;
+  }
+  previousOutputEl.textContent = `${firstNum} ${mathSymbols[operation]} ${secondNum} = ${result}`;
+}
+
+// When we calculate with the arithmetic buttons it does the current equation so like 16+, or when its the equal button then its just 5; this is differentiated from the render previous function
+// If error_detected is true, then we won't render any equation, but if its false, then we will render equations like normal.
+function renderCurrentOutput(output) {
+  if (!error_detected) {
+    output = output.toString(); //Ensure that the output or data being rendered is actually a string so we can do tests with it
+    currentOutputEl.textContent = output;
+  }
+}
+
+/*
++ Function that will handle some errors that the user creates
+- Function will display in the output the type of error that happened, depending on where the error occurred in the program.
+- Disables all buttons except for the clear button when an error occurs in order to show the user that they have to press the clear button to use the program again.
+- Adds a css class onto those buttons in order to indicate that the button is disabled.
+*/
+function displayError(errorType) {
+  currentOutputEl.textContent = errorType;
+  error_detected = true; //set this to true so that the main rendering function doesn't render something that overwrites the 
+  disableDigitBtns(true); //Disable all buttons except for the clear button, but also when clear button is pressed we re-enable all buttons again
+  disableArithmeticBtns(true);
+  
+  equalBtn.classList.add('button-disabled');
+  deleteBtn.classList.add('button-disabled');
+  equalBtn.disabled = true;
+  deleteBtn.disabled = true;
+}
+
 /*
 + Function handles the calculation of two numbers, passed in as strings, and an operator
 - Converts the arguments into floating point numbers and handles the math accordingly. 
@@ -64,7 +112,6 @@ const mathSymbols = {
 - Finally it returns the result as a string
 */
 function calculate(firstNum, secondNum, operation) {
-  console.log(`Calculation trigged num1: ${firstNum} and num2: ${secondNum}, operator: ${operation}`);
   // Convert the numbers (type string) into type float
   firstNum = parseFloat(firstNum);
   secondNum = parseFloat(secondNum);
@@ -96,17 +143,11 @@ function calculate(firstNum, secondNum, operation) {
   return result.toString();
 };
 
-// This function will show and soon store the previous output 
-function renderPreviousOutput(firstNum, secondNum, operation, result) {
-  previousOutputEl.textContent = `${firstNum} ${mathSymbols[operation]} ${secondNum} = ${result}`;
-}
-
-// When we calculate with the arithmetic buttons it does the current equation so like 16+, or when its the equal button then its just 5; this is differentiated from the render previous function
-// If error_detected is true, then we won't render any equation, but if its false, then we will render equations like normal.
-function renderCurrentOutput(output) {
-  if (!error_detected) {
-    output = output.toString(); //Ensure that the output or data being rendered is actually a string so we can do tests with it
-    currentOutputEl.textContent = output;
+function decimalCheck(num) {
+  if (num.includes('.')) {
+    disableDigitBtns(true, 'decimal');
+  } else {
+    disableDigitBtns(false, 'decimal');
   }
 }
 
@@ -149,24 +190,23 @@ function disableArithmeticBtns(bool) {
   });
 }
 
-/*
-+ Function that will handle some errors that the user creates
-- Function will display in the output the type of error that happened, depending on where the error occurred in the program.
-- Disables all buttons except for the clear button when an error occurs in order to show the user that they have to press the clear button to use the program again.
-- Adds a css class onto those buttons in order to indicate that the button is disabled.
-*/
-function displayError(errorType) {
-  currentOutputEl.textContent = errorType;
-  error_detected = true; //set this to true so that the main rendering function doesn't render something that overwrites the 
-  disableDigitBtns(true); //Disable all buttons except for the clear button, but also when clear button is pressed we re-enable all buttons again
-  disableArithmeticBtns(true);
-  
-  equalBtn.classList.add('button-disabled');
-  deleteBtn.classList.add('button-disabled');
-  equalBtn.disabled = true;
-  deleteBtn.disabled = true;
+// Function clears the data. Clears both numbers, operator, and the equation
+// If there was an error that was triggered then the user would be lead to execute this function, which 
+// allows buttons to be clicked again after being disabled.
+function clearData() {
+  num1 = "";
+  num2 = "";
+  operator = "";
+  equation = "";
+  error_detected = false; //reset the error boolean as well
+  renderCurrentOutput(equation); //Since equation is blank and error_detected is false, it will render nothing.
+  disableDigitBtns(false);
+  disableArithmeticBtns(false); 
+  equalBtn.classList.remove('button-disabled');
+  deleteBtn.classList.remove('button-disabled');
+  equalBtn.disabled = false;
+  deleteBtn.disabled = false;
 }
-
 /*
 + Eventlistenerwith the equal btn handles calculations made with the equal button
 - Checks if the first and second number (which are strings) have a length greater than 1. If this is true then the user entered numbers instead of leaving the numbers blank.
@@ -216,8 +256,7 @@ arithmeticBtns.forEach(btn => {
     if ((num1 == false && num1 !== '0') || ((num2 == false && num2 !== '0') && operator)) { //second clause makes it possible for subtract to go through
 
       //if it isn't subtraction then they aren't negating, which means they are putting in an incorrect value
-      if (btnID == 'subtract') {
-        
+      if (btnID == 'subtract') {        
         // If the operator is set then we are working on the second number, else we are working on the first number
         if (operator) {
           num2 = '-' + num2;
@@ -267,27 +306,6 @@ arithmeticBtns.forEach(btn => {
   })    
 })
 
-
-
-// Function clears the data. Clears both numbers, operator, and the equation
-// If there was an error that was triggered then the user would be lead to execute this function, which 
-// allows buttons to be clicked again after being disabled.
-function clearData() {
-  num1 = "";
-  num2 = "";
-  operator = "";
-  equation = "";
-  error_detected = false; //reset the error boolean as well
-  renderCurrentOutput(equation); //Since equation is blank and error_detected is false, it will render nothing.
-  disableDigitBtns(false);
-  disableArithmeticBtns(false);
-  
-  equalBtn.classList.remove('button-disabled');
-  deleteBtn.classList.remove('button-disabled');
-  equalBtn.disabled = false;
-  deleteBtn.disabled = false;
-}
-
 // Calls function to clear calculator.
 clearBtn.addEventListener('click', clearData);
 
@@ -307,21 +325,13 @@ deleteBtn.addEventListener('click', () => { //get the deleted character, if the 
   renderCurrentOutput(equation);
 })
 
-function decimalCheck(num) {
-  if (num.includes('.')) {
-    disableDigitBtns(true, 'decimal');
-  } else {
-    disableDigitBtns(false, 'decimal');
-  } 
-}
-
 // Have the decimal checker in the delete button
 digitBtns.forEach(btn => {
   btn.addEventListener('click', (e) => {
     const BTN_VALUE = e.currentTarget.dataset.value;
     // if operator is set then we go to the second number else the first number
     // Or if the user used the equal btn to calculate an answer
-    if (operator) { //|| used_btn == true;
+    if (operator) { 
       num2 += BTN_VALUE;
       decimalCheck(num2); //once it switches to the second number then decimal check is going to be reset since num2 has no decimal.
     } else {
@@ -333,3 +343,68 @@ digitBtns.forEach(btn => {
   })
 })
 
+document.addEventListener('keydown', e => {
+  const KEY_CODE = e.code;
+  let keyValue;
+  switch(KEY_CODE) {
+    case 'Numpad0':
+      keyValue = 0;
+      break;
+    case 'Numpad1':
+      keyValue = 1;
+      break;
+    case 'Numpad2':
+      keyValue = 2;
+      break;
+    case 'Numpad3':
+      keyValue = 3;
+      break;
+    case 'Numpad4':
+      keyValue = 4;
+      break;
+    case 'Numpad5':
+      keyValue = 5;
+      break;
+    case 'Numpad6':
+      keyValue = 6;
+      break;
+    case 'Numpad7':
+      keyValue = 7;
+      break;
+    case 'Numpad8':
+      keyValue = '8';
+      break;
+    case 'Numpad9':
+      keyValue = 9;
+      break;
+    case 'NumpadDecimal':
+      keyValue = '.';
+      break;
+
+    // Buttons for add, subtract, multiply, divide, modulo, delete, equal, and clear
+    case 'ArrowUp':
+      keyValue = '.';
+      break;
+    case 'ArrowDown':
+      keyValue = '.';
+      break;
+    case 'NumpadAdd':
+      keyValue = '.';
+      break;
+    case 'NumpadSubtract':
+      keyValue = '.';
+      break;
+    case 'NumpadMultiply':
+      keyValue = '.';
+      break;
+    case 'NumpadDivide':
+      keyValue = '.';
+      break;
+    case 'NumpadEnter':
+      keyValue = "Enter";
+      break;
+    case 'Digit5': //can't really have percent so this is the best we could do
+      keyValue = 'Modulo';
+      break;
+  }
+})
