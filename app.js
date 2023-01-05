@@ -241,7 +241,7 @@ function clearData() {
     equationHistory = [];
     equationIndex = 0;
     renderPreviousOutput(); 
-    directionalBtnsContainer.classList.remove('content-hidden');
+    directionalBtnsContainer.classList.add('content-hidden');
   }
   equation = "";
   used_equals_btn = false;
